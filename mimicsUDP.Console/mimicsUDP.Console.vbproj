@@ -58,11 +58,11 @@
   <ItemGroup>
     <Reference Include="mimicsUDP.DLL, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\mimicsUDP.DLL\trunk\bin\mimicsUDP.DLL.dll</HintPath>
+      <HintPath>..\mimicsUDP.DLL\bin\mimicsUDP.DLL.dll</HintPath>
     </Reference>
     <Reference Include="MySql.Data, Version=6.7.4.0, Culture=neutral, PublicKeyToken=c5687fc88969c44d, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\mimicsUDP.DLL\trunk\bin\MySql.Data.dll</HintPath>
+      <HintPath>..\mimicsUDP.DLL\bin\MySql.Data.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
