@@ -15,7 +15,7 @@ Public Class clsMimicsUDP
 
     Private MySqlCon As MySqlConnection
     Private strSql As String
-    Private strVersion As String = "Version 1.16 26/11/2014"
+    Private strVersion As String = "Version 1.17 01/07/2015"
     Private strSubnet As String
     Private blnFractions As Boolean = False
 
@@ -250,11 +250,11 @@ Public Class clsMimicsUDP
                 Dim acc10 As Integer = CStr(Convert.ToInt32(Mid(sz, 173, 2), 16) << 8) + Convert.ToInt32(Mid(sz, 175, 2), 16)
                 Dim acc11 As Integer = CStr(Convert.ToInt32(Mid(sz, 177, 2), 16) << 8) + Convert.ToInt32(Mid(sz, 179, 2), 16)
 
-                strSql = "INSERT INTO `cmm`.`tblmimics` (datDate, strTime, strDevice," _
+                strSql = "INSERT INTO `cmm`.`tblmimics` (lngUnix, datDate, strTime, strDevice," _
                     & " A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, Ext," _
                     & " L1, L2, L3, L4, D0, D1, D2, D3, D4, D5, D6, D7, B1, B2, B3, B4, D8, D9, D10, D11, D12, D13, D14, D15," _
                     & " Peripheral_1, Peripheral_2, Peripheral_3, x_max, x_min, y_max, y_min, z_max, z_min, x_max_2, x_min_2, y_max_2, y_min_2, z_max_2, z_min_2)" _
-                    & " VALUES ('" & strDate & "', '" & strTime & "', '" & strDevice & "'," _
+                    & " VALUES (" & lngUnix & ", '" & strDate & "', '" & strTime & "', '" & strDevice & "'," _
                     & "" & A0 & ", " & A1 & ", " & A2 & ", " & A3 & ", " & A4 & ", " & A5 & ", " & A6 & ", " & A7 & "," _
                     & "" & A8 & ", " & A9 & ", " & A10 & ", " & A11 & ", " & A12 & ", " & A13 & ", " & A14 & ", " & A15 & "," _
                     & "" & Ext & "," _
