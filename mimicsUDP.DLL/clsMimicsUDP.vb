@@ -15,7 +15,7 @@ Public Class clsMimicsUDP
 
     Private MySqlCon As MySqlConnection
     Private strSql As String
-    Private strVersion As String = "Version 1.17 01/07/2015"
+    Private strVersion As String = "Version 1.18 28/07/2015"
     Private strSubnet As String
     Private blnFractions As Boolean = False
 
@@ -101,7 +101,7 @@ Public Class clsMimicsUDP
         '123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890
         '         1         2         3         4         5         6         7         8         9         0         1         2         3         4         5         6         7         8
         Try
-            Dim strSql As String
+            Dim strSql, strSqlINSERTholding, strSqlUPDATEholding As String
             Dim strUnix As String
             Dim lngUnix As Long
 
@@ -120,8 +120,8 @@ Public Class clsMimicsUDP
             Dim strTime As String = mimicTime(lngUnix)
 
             Dim strDevice As String = strSubnet & CStr(Convert.ToInt32(Mid(sz, 21, 2), 16))
+            Dim strUnique As String = CStr(lngUnix) & strDevice
 
-            If strDevice = "192.168.1.103" Then q = q
             If (Len(sz)) < 175 Then Exit Sub 'Pre accelerometer(2) versions
 
             If Left(sz, 1) = "3" Then '"3" indicator for a status messsage
@@ -143,7 +143,9 @@ Public Class clsMimicsUDP
 
                 strSql = "INSERT INTO `cmm`.`tblmimics_status` (datDate, strTime, strDevice, strStatus)" _
                 & " VALUES ('" & strDate & "', '" & strTime & "', '" & strDevice & "', '" & strStatus & "')"
+
             ElseIf Left(sz, 1) = "0" Then '"0" indicator for a data logging messsage
+
                 Dim A0 As Double = (Convert.ToInt32(Mid(sz, 23, 2), 16) << 8) + Convert.ToInt32(Mid(sz, 25, 2), 16)
                 Dim A1 As Double = (Convert.ToInt32(Mid(sz, 27, 2), 16) << 8) + Convert.ToInt32(Mid(sz, 29, 2), 16)
                 Dim A2 As Double = (Convert.ToInt32(Mid(sz, 31, 2), 16) << 8) + Convert.ToInt32(Mid(sz, 33, 2), 16)
@@ -253,7 +255,7 @@ Public Class clsMimicsUDP
                 strSql = "INSERT INTO `cmm`.`tblmimics` (lngUnix, datDate, strTime, strDevice," _
                     & " A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, Ext," _
                     & " L1, L2, L3, L4, D0, D1, D2, D3, D4, D5, D6, D7, B1, B2, B3, B4, D8, D9, D10, D11, D12, D13, D14, D15," _
-                    & " Peripheral_1, Peripheral_2, Peripheral_3, x_max, x_min, y_max, y_min, z_max, z_min, x_max_2, x_min_2, y_max_2, y_min_2, z_max_2, z_min_2)" _
+                    & " Peripheral_1, Peripheral_2, Peripheral_3, x_max, x_min, y_max, y_min, z_max, z_min, x_max_2, x_min_2, y_max_2, y_min_2, z_max_2, z_min_2, strUnique)" _
                     & " VALUES (" & lngUnix & ", '" & strDate & "', '" & strTime & "', '" & strDevice & "'," _
                     & "" & A0 & ", " & A1 & ", " & A2 & ", " & A3 & ", " & A4 & ", " & A5 & ", " & A6 & ", " & A7 & "," _
                     & "" & A8 & ", " & A9 & ", " & A10 & ", " & A11 & ", " & A12 & ", " & A13 & ", " & A14 & ", " & A15 & "," _
@@ -264,28 +266,61 @@ Public Class clsMimicsUDP
                     & "" & D8 & ", " & D9 & ", " & D10 & ", " & D11 & ", " & D12 & ", " & D13 & ", " & D14 & ", " & D15 & ", " _
                     & "'" & strPeripheral_1 & "', '" & strPeripheral_2 & "', '" & strPeripheral_3 & "', " _
                     & "" & acc0 & ", " & acc1 & ", " & acc2 & ", " & acc3 & ", " & acc4 & ", " & acc5 & ", " _
-                    & "" & acc6 & ", " & acc7 & ", " & acc8 & ", " & acc9 & ", " & acc10 & ", " & acc11 & ")"
+                    & "" & acc6 & ", " & acc7 & ", " & acc8 & ", " & acc9 & ", " & acc10 & ", " & acc11 & ", '" & strUnique & "')"
+
+                strSqlINSERTholding = "INSERT INTO `cmm`.`tblmimics_holding` (lngUnix, datDate, strTime, strDevice," _
+                    & " A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, Ext," _
+                    & " L1, L2, L3, L4, D0, D1, D2, D3, D4, D5, D6, D7, B1, B2, B3, B4, D8, D9, D10, D11, D12, D13, D14, D15," _
+                    & " Peripheral_1, Peripheral_2, Peripheral_3, x_max, x_min, y_max, y_min, z_max, z_min, x_max_2, x_min_2, y_max_2, y_min_2, z_max_2, z_min_2, strUnique)" _
+                    & " VALUES (" & lngUnix & ", '" & strDate & "', '" & strTime & "', '" & strDevice & "'," _
+                    & "" & A0 & ", " & A1 & ", " & A2 & ", " & A3 & ", " & A4 & ", " & A5 & ", " & A6 & ", " & A7 & "," _
+                    & "" & A8 & ", " & A9 & ", " & A10 & ", " & A11 & ", " & A12 & ", " & A13 & ", " & A14 & ", " & A15 & "," _
+                    & "" & Ext & "," _
+                    & "" & L1 & ", " & L2 & ", " & L3 & ", " & L4 & ", " _
+                    & "" & D0 & ", " & D1 & ", " & D2 & ", " & D3 & ", " & D4 & ", " & D5 & ", " & D6 & ", " & D7 & ", " _
+                    & "" & B1 & ", " & B2 & ", " & B3 & ", " & B4 & ", " _
+                    & "" & D8 & ", " & D9 & ", " & D10 & ", " & D11 & ", " & D12 & ", " & D13 & ", " & D14 & ", " & D15 & ", " _
+                    & "'" & strPeripheral_1 & "', '" & strPeripheral_2 & "', '" & strPeripheral_3 & "', " _
+                    & "" & acc0 & ", " & acc1 & ", " & acc2 & ", " & acc3 & ", " & acc4 & ", " & acc5 & ", " _
+                    & "" & acc6 & ", " & acc7 & ", " & acc8 & ", " & acc9 & ", " & acc10 & ", " & acc11 & ", '" & strUnique & "')"
+
+                strSqlUPDATEholding = "UPDATE `cmm`.`tblmimics_holding` SET lngUnix = " & lngUnix & ", datDate = '" & strDate & "', strTime = '" & strTime & "'," _
+                    & " A0 = " & A0 & ", A1 = " & A1 & ", A2 = " & A2 & ", A3 = " & A3 & ", A4 = " & A4 & ", A5 = " & A5 & ", A6 = " & A6 & ", A7 = " & A7 & ", A8 = " & A8 & "," _
+                    & " A9 = " & A9 & ", A10 = " & A10 & ", A11 = " & A11 & ", A12 = " & A12 & ", A13 = " & A13 & ", A14 = " & A14 & ", A15 = " & A15 & ", Ext = " & Ext & ", " _
+                    & " L1 = " & L1 & ", L2 = " & L2 & ", L3 = " & L3 & ", L4 = " & L4 & ", D0 = " & D0 & ", D1 = " & D1 & ", D2 = " & D2 & ", D3 = " & D3 & ", " _
+                    & " D4 = " & D4 & ", D5 = " & D5 & ", D6 = " & D6 & ", D7 = " & D7 & ", D8 = " & D8 & ", D9 = " & D9 & ", D10 = " & D10 & ", D11 = " & D11 & ", " _
+                    & " D12 = " & D12 & ", D13 = " & D13 & ", D14 = " & D14 & ", D15 = " & D15 & ", " _
+                    & " Peripheral_1 = " & strPeripheral_1 & ", Peripheral_2 = " & strPeripheral_2 & ", Peripheral_3 = " & strPeripheral_3 & ", " _
+                    & " x_max = " & acc0 & ", x_min = " & acc1 & ", y_max = " & acc2 & ", y_min = " & acc3 & ", z_max = " & acc4 & ", z_min = " & acc5 & ", " _
+                    & " x_max_2 = " & acc6 & ", x_min_2 = " & acc7 & ", y_max_2 = " & acc8 & ", y_min_2 = " & acc9 & ", z_max_2 = " & acc10 & ", z_min_2 = " & acc11 & ", strUnique = '" & strUnique & "' WHERE strDEvice = '" & strDevice & "'"
             End If
 
             If MySqlCon.State = ConnectionState.Closed Then MySqlCon.Open()
             If MySqlCon.State = ConnectionState.Broken Then MySqlCon.Open()
+
+            'Insert new data line into tblMimics
             Dim sqlSelectCMD As MySqlCommand
             sqlSelectCMD = New MySqlCommand(strSql, MySqlCon)
             sqlSelectCMD.ExecuteScalar()
 
+            'If this IP address exists in the holding table then UPDATE and, if not, then INSERT
+            strSql = "SELECT tblmimics_holding.strDevice FROM tblmimics_holding WHERE tblmimics_holding.strDevice = '" & strDevice & "'"
+            Dim dbcmd As New MySqlCommand(strSql, MySqlCon)
+            Dim blnExists As Boolean = False
+            If (RowCount(dbcmd) > 0) Then blnExists = True
+            dbcmd = Nothing
+
             If Left(sz, 1) = "0" Then '"0" indicator for a data logging messsage
-                'Delete this IP from the mimics holding table - only one entry is required here
-                '[NB Disable SQL Queries "Safe mode" in Workbench preferences for this to work]
-                If MySqlCon.State = ConnectionState.Closed Then MySqlCon.Open()
-                If MySqlCon.State = ConnectionState.Broken Then MySqlCon.Open()
-                sqlSelectCMD = New MySqlCommand("DELETE FROM tblmimics_holding WHERE strDevice = '" & strDevice & "';", MySqlCon)
-                sqlSelectCMD.ExecuteScalar()
-                'Write the data to the mimics holding table
-                strSql = Replace(strSql, "tblmimics", "tblmimics_holding")
-                sqlSelectCMD = New MySqlCommand(strSql, MySqlCon)
-                sqlSelectCMD.ExecuteScalar()
+                If (blnExists = False) Then 'INSERT
+                    sqlSelectCMD = New MySqlCommand(strSqlINSERTholding, MySqlCon)
+                    sqlSelectCMD.ExecuteScalar()
+                Else                         'UPDATE
+                    sqlSelectCMD = New MySqlCommand(strSqlUPDATEholding, MySqlCon)
+                    sqlSelectCMD.ExecuteScalar()
+                End If
             End If
 
+            
         Catch ex As Exception
             If MySqlCon.State = ConnectionState.Closed Then MySqlCon.Open()
             If MySqlCon.State = ConnectionState.Broken Then MySqlCon.Open()
@@ -519,6 +554,27 @@ NextLine:
         Next
 
         Return hex.ToString()
+
+    End Function
+    Public Function RowCount(ByVal dbCmd As MySqlCommand) As Integer
+        'A clever little wrapper that will return the amount of rows in the datareader
+        'that is passed to it
+
+        Dim n As Integer
+        Dim sqlReader As MySqlDataReader
+
+        Try
+            sqlReader = dbCmd.ExecuteReader()
+            While sqlReader.Read()
+                n = n + 1
+            End While
+            sqlReader.Close()
+
+            Return n
+
+        Catch ex As Exception
+            WriteToLog(ex.ToString(), True)
+        End Try
 
     End Function
 End Class
