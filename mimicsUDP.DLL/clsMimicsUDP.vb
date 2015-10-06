@@ -15,7 +15,7 @@ Public Class clsMimicsUDP
 
     Private MySqlCon As MySqlConnection
     Private strSql As String
-    Private strVersion As String = "Version 1.18 28/07/2015"
+    Private strVersion As String = "Version 1.19 22/09/2015"
     Private strSubnet As String
     Private blnFractions As Boolean = False
 
@@ -114,7 +114,10 @@ Public Class clsMimicsUDP
             lngUnix = CLng(strUnix)
             If lngUnix = 0 Then lngUnix = 1388534400 '01/01/2014 00:00:00
             If lngUnix > 1388534400 Then lngUnix += 7200
-
+            '--------------------------------------------------------------------------------------------------
+            '----------------------------------Date Time stamp to be time received-----------------------------
+            lngUnix = (DateTime.UtcNow - New DateTime(1970, 1, 1, 0, 0, 0)).TotalSeconds
+            '--------------------------------------------------------------------------------------------------
             Dim strDate As String = mimicDate(lngUnix)
             Dim datDate As Date = CDate(strDate)
             Dim strTime As String = mimicTime(lngUnix)
