@@ -15,7 +15,7 @@ Public Class clsMimicsUDP
 
     Private MySqlCon As MySqlConnection
     Private strSql As String
-    Private strVersion As String = "Version 1.19 22/09/2015"
+    Private strVersion As String = "Version 1.20 27/10/2015"
     Private strSubnet As String
     Private blnFractions As Boolean = False
 
@@ -102,22 +102,21 @@ Public Class clsMimicsUDP
         '         1         2         3         4         5         6         7         8         9         0         1         2         3         4         5         6         7         8
         Try
             Dim strSql, strSqlINSERTholding, strSqlUPDATEholding As String
-            Dim strUnix As String
-            Dim lngUnix As Long
 
-            Dim q As Integer
-            For q = 2 To 20 Step 2
-                strUnix += Mid(sz, q, 1)
-            Next
+            'Use the server's date time stamp for the incoming packet
+            Dim lngUnix As Long = (Now() - New DateTime(1970, 1, 1, 0, 0, 0)).TotalSeconds
 
-            If Len(strUnix) <> 10 Then strUnix = 0
-            lngUnix = CLng(strUnix)
-            If lngUnix = 0 Then lngUnix = 1388534400 '01/01/2014 00:00:00
-            If lngUnix > 1388534400 Then lngUnix += 7200
-            '--------------------------------------------------------------------------------------------------
-            '----------------------------------Date Time stamp to be time received-----------------------------
-            lngUnix = (DateTime.UtcNow - New DateTime(1970, 1, 1, 0, 0, 0)).TotalSeconds
-            '--------------------------------------------------------------------------------------------------
+            'Dim strUnix As String
+            'Dim q As Integer
+            'For q = 2 To 20 Step 2
+            '    strUnix += Mid(sz, q, 1)
+            'Next
+
+            'If Len(strUnix) <> 10 Then strUnix = 0
+            'lngUnix = CLng(strUnix)
+            'If lngUnix = 0 Then lngUnix = 1388534400 '01/01/2014 00:00:00
+            'If lngUnix > 1388534400 Then lngUnix += 7200
+           
             Dim strDate As String = mimicDate(lngUnix)
             Dim datDate As Date = CDate(strDate)
             Dim strTime As String = mimicTime(lngUnix)
