@@ -14,10 +14,11 @@ Imports Microsoft.VisualBasic
 Public Class clsMimicsUDP
 
     Private MySqlCon As MySqlConnection
-    Private strSql As String
-    Private strVersion As String = "Version 1.20 27/10/2015"
+    Dim strSql, strSqlINSERTholding, strSqlUPDATEholding As String
+    Private strVersion As String = "Version 1.22 29/01/2016"
     Private strSubnet As String
     Private blnFractions As Boolean = False
+    Private strStep As String
 
     Public Sub Main(Optional ByVal ConsoleOrService As String = "service")
 
@@ -101,11 +102,11 @@ Public Class clsMimicsUDP
         '123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890
         '         1         2         3         4         5         6         7         8         9         0         1         2         3         4         5         6         7         8
         Try
-            Dim strSql, strSqlINSERTholding, strSqlUPDATEholding As String
-
-            'Use the server's date time stamp for the incoming packet
-            Dim lngUnix As Long = (Now() - New DateTime(1970, 1, 1, 0, 0, 0)).TotalSeconds
-
+            'The incoming unix timestamp stamps the datetime of the cpu unit's reading
+            'which is prone to error due to older units not updating time correctly.
+            'The datetime written to the table here reflects the datetime
+            'Use the server's date time stamp for the incoming packet until all of the cpu units are getting the time correctly
+            '-------------------------------------------------OMIT UNTIL TIME CORRECTED----------------------------------------
             'Dim strUnix As String
             'Dim q As Integer
             'For q = 2 To 20 Step 2
@@ -116,13 +117,18 @@ Public Class clsMimicsUDP
             'lngUnix = CLng(strUnix)
             'If lngUnix = 0 Then lngUnix = 1388534400 '01/01/2014 00:00:00
             'If lngUnix > 1388534400 Then lngUnix += 7200
-           
+            '-------------------------------------------------------------------------------------------------------------------
+
+            Dim lngUnix As Long = (DateTime.UtcNow() - New DateTime(1970, 1, 1, 0, 0, 0)).TotalSeconds
+            lngUnix = lngUnix + 7200 'Work in local time 
+
             Dim strDate As String = mimicDate(lngUnix)
             Dim datDate As Date = CDate(strDate)
             Dim strTime As String = mimicTime(lngUnix)
 
             Dim strDevice As String = strSubnet & CStr(Convert.ToInt32(Mid(sz, 21, 2), 16))
             Dim strUnique As String = CStr(lngUnix) & strDevice
+            Dim dblUnique As Double = (lngUnix - 1000000000) + Convert.ToInt32(Mid(sz, 21, 2), 16) / 1000
 
             If (Len(sz)) < 175 Then Exit Sub 'Pre accelerometer(2) versions
 
@@ -257,7 +263,7 @@ Public Class clsMimicsUDP
                 strSql = "INSERT INTO `cmm`.`tblmimics` (lngUnix, datDate, strTime, strDevice," _
                     & " A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, Ext," _
                     & " L1, L2, L3, L4, D0, D1, D2, D3, D4, D5, D6, D7, B1, B2, B3, B4, D8, D9, D10, D11, D12, D13, D14, D15," _
-                    & " Peripheral_1, Peripheral_2, Peripheral_3, x_max, x_min, y_max, y_min, z_max, z_min, x_max_2, x_min_2, y_max_2, y_min_2, z_max_2, z_min_2, strUnique)" _
+                    & " Peripheral_1, Peripheral_2, Peripheral_3, x_max, x_min, y_max, y_min, z_max, z_min, x_max_2, x_min_2, y_max_2, y_min_2, z_max_2, z_min_2, dblUnique)" _
                     & " VALUES (" & lngUnix & ", '" & strDate & "', '" & strTime & "', '" & strDevice & "'," _
                     & "" & A0 & ", " & A1 & ", " & A2 & ", " & A3 & ", " & A4 & ", " & A5 & ", " & A6 & ", " & A7 & "," _
                     & "" & A8 & ", " & A9 & ", " & A10 & ", " & A11 & ", " & A12 & ", " & A13 & ", " & A14 & ", " & A15 & "," _
@@ -268,12 +274,12 @@ Public Class clsMimicsUDP
                     & "" & D8 & ", " & D9 & ", " & D10 & ", " & D11 & ", " & D12 & ", " & D13 & ", " & D14 & ", " & D15 & ", " _
                     & "'" & strPeripheral_1 & "', '" & strPeripheral_2 & "', '" & strPeripheral_3 & "', " _
                     & "" & acc0 & ", " & acc1 & ", " & acc2 & ", " & acc3 & ", " & acc4 & ", " & acc5 & ", " _
-                    & "" & acc6 & ", " & acc7 & ", " & acc8 & ", " & acc9 & ", " & acc10 & ", " & acc11 & ", '" & strUnique & "')"
+                    & "" & acc6 & ", " & acc7 & ", " & acc8 & ", " & acc9 & ", " & acc10 & ", " & acc11 & ", " & dblUnique & ")"
 
                 strSqlINSERTholding = "INSERT INTO `cmm`.`tblmimics_holding` (lngUnix, datDate, strTime, strDevice," _
                     & " A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, Ext," _
                     & " L1, L2, L3, L4, D0, D1, D2, D3, D4, D5, D6, D7, B1, B2, B3, B4, D8, D9, D10, D11, D12, D13, D14, D15," _
-                    & " Peripheral_1, Peripheral_2, Peripheral_3, x_max, x_min, y_max, y_min, z_max, z_min, x_max_2, x_min_2, y_max_2, y_min_2, z_max_2, z_min_2, strUnique)" _
+                    & " Peripheral_1, Peripheral_2, Peripheral_3, x_max, x_min, y_max, y_min, z_max, z_min, x_max_2, x_min_2, y_max_2, y_min_2, z_max_2, z_min_2, dblUnique)" _
                     & " VALUES (" & lngUnix & ", '" & strDate & "', '" & strTime & "', '" & strDevice & "'," _
                     & "" & A0 & ", " & A1 & ", " & A2 & ", " & A3 & ", " & A4 & ", " & A5 & ", " & A6 & ", " & A7 & "," _
                     & "" & A8 & ", " & A9 & ", " & A10 & ", " & A11 & ", " & A12 & ", " & A13 & ", " & A14 & ", " & A15 & "," _
@@ -284,7 +290,7 @@ Public Class clsMimicsUDP
                     & "" & D8 & ", " & D9 & ", " & D10 & ", " & D11 & ", " & D12 & ", " & D13 & ", " & D14 & ", " & D15 & ", " _
                     & "'" & strPeripheral_1 & "', '" & strPeripheral_2 & "', '" & strPeripheral_3 & "', " _
                     & "" & acc0 & ", " & acc1 & ", " & acc2 & ", " & acc3 & ", " & acc4 & ", " & acc5 & ", " _
-                    & "" & acc6 & ", " & acc7 & ", " & acc8 & ", " & acc9 & ", " & acc10 & ", " & acc11 & ", '" & strUnique & "')"
+                    & "" & acc6 & ", " & acc7 & ", " & acc8 & ", " & acc9 & ", " & acc10 & ", " & acc11 & ", " & dblUnique & ")"
 
                 strSqlUPDATEholding = "UPDATE `cmm`.`tblmimics_holding` SET lngUnix = " & lngUnix & ", datDate = '" & strDate & "', strTime = '" & strTime & "'," _
                     & " A0 = " & A0 & ", A1 = " & A1 & ", A2 = " & A2 & ", A3 = " & A3 & ", A4 = " & A4 & ", A5 = " & A5 & ", A6 = " & A6 & ", A7 = " & A7 & ", A8 = " & A8 & "," _
@@ -292,41 +298,56 @@ Public Class clsMimicsUDP
                     & " L1 = " & L1 & ", L2 = " & L2 & ", L3 = " & L3 & ", L4 = " & L4 & ", D0 = " & D0 & ", D1 = " & D1 & ", D2 = " & D2 & ", D3 = " & D3 & ", " _
                     & " D4 = " & D4 & ", D5 = " & D5 & ", D6 = " & D6 & ", D7 = " & D7 & ", D8 = " & D8 & ", D9 = " & D9 & ", D10 = " & D10 & ", D11 = " & D11 & ", " _
                     & " D12 = " & D12 & ", D13 = " & D13 & ", D14 = " & D14 & ", D15 = " & D15 & ", " _
-                    & " Peripheral_1 = " & strPeripheral_1 & ", Peripheral_2 = " & strPeripheral_2 & ", Peripheral_3 = " & strPeripheral_3 & ", " _
+                    & " Peripheral_1 = '" & strPeripheral_1 & "', Peripheral_2 = '" & strPeripheral_2 & "', Peripheral_3 = '" & strPeripheral_3 & "', " _
                     & " x_max = " & acc0 & ", x_min = " & acc1 & ", y_max = " & acc2 & ", y_min = " & acc3 & ", z_max = " & acc4 & ", z_min = " & acc5 & ", " _
-                    & " x_max_2 = " & acc6 & ", x_min_2 = " & acc7 & ", y_max_2 = " & acc8 & ", y_min_2 = " & acc9 & ", z_max_2 = " & acc10 & ", z_min_2 = " & acc11 & ", strUnique = '" & strUnique & "' WHERE strDEvice = '" & strDevice & "'"
+                    & " x_max_2 = " & acc6 & ", x_min_2 = " & acc7 & ", y_max_2 = " & acc8 & ", y_min_2 = " & acc9 & ", z_max_2 = " & acc10 & ", z_min_2 = " & acc11 & ", dblUnique = " & dblUnique & " WHERE strDevice = '" & strDevice & "'"
             End If
 
             If MySqlCon.State = ConnectionState.Closed Then MySqlCon.Open()
             If MySqlCon.State = ConnectionState.Broken Then MySqlCon.Open()
 
-            'Insert new data line into tblMimics
             Dim sqlSelectCMD As MySqlCommand
-            sqlSelectCMD = New MySqlCommand(strSql, MySqlCon)
-            sqlSelectCMD.ExecuteScalar()
+
+            'If this IP address exists in the mimics table then do not re insert
+            Dim dbcmd As New MySqlCommand("SELECT tblmimics.strDevice FROM tblmimics WHERE tblmimics.dblUnique =  " & dblUnique, MySqlCon)
+            Dim blnAlready As Boolean = False
+            If (RowCount(dbcmd) > 0) Then blnAlready = True
+            dbcmd = Nothing
+
+            If blnAlready = False Then
+                'Insert new data line into tblMimics
+                strStep = "SQL"
+                sqlSelectCMD = New MySqlCommand(strSql, MySqlCon)
+                sqlSelectCMD.ExecuteScalar()
+            End If
 
             'If this IP address exists in the holding table then UPDATE and, if not, then INSERT
             strSql = "SELECT tblmimics_holding.strDevice FROM tblmimics_holding WHERE tblmimics_holding.strDevice = '" & strDevice & "'"
-            Dim dbcmd As New MySqlCommand(strSql, MySqlCon)
+            dbcmd = New MySqlCommand(strSql, MySqlCon)
             Dim blnExists As Boolean = False
             If (RowCount(dbcmd) > 0) Then blnExists = True
             dbcmd = Nothing
 
             If Left(sz, 1) = "0" Then '"0" indicator for a data logging messsage
                 If (blnExists = False) Then 'INSERT
+                    strStep = "INSERT"
                     sqlSelectCMD = New MySqlCommand(strSqlINSERTholding, MySqlCon)
                     sqlSelectCMD.ExecuteScalar()
                 Else                         'UPDATE
+                    strStep = "UPDATE"
                     sqlSelectCMD = New MySqlCommand(strSqlUPDATEholding, MySqlCon)
                     sqlSelectCMD.ExecuteScalar()
                 End If
             End If
 
-            
+
         Catch ex As Exception
             If MySqlCon.State = ConnectionState.Closed Then MySqlCon.Open()
             If MySqlCon.State = ConnectionState.Broken Then MySqlCon.Open()
-            WriteToLog(strSql)
+            WriteToLog(strStep)
+            WriteToLog("strsql:" & strSql)
+            WriteToLog("strSqlINSERTholding:" & strSqlINSERTholding)
+            WriteToLog("strSqlUPDATEholding:" & strSqlUPDATEholding)
             WriteToLog(ex.ToString(), True)
         End Try
 
@@ -510,16 +531,13 @@ NextLine:
 
     Private Function mimicDate(ByVal lngEpochTime As Long)
 
-        'unix = 1356998400 ' 01 01 2013 00:00:00
-        '1375531467 = 3/08/2013 12:04:27
-        '.Format("{0:dd/MM/yyyy}", DateTime.Now)
-
         Try
-            Dim baseDate As New DateTime(1970, 1, 1, 0, 0, 0)
-            Dim datDate As Date = baseDate.ToLocalTime().AddSeconds(lngEpochTime)
-            Dim strDate As String = datDate.ToString(Format("yyyy/MM/dd"))
+
+            Dim datDate As Date = DateAdd(DateInterval.Second, lngEpochTime, #1/1/1970#)
+            Dim strDate As String = datDate.ToString(Format("yyyy-MM-dd"))
+
             If (strDate.IndexOf("/") = -1) Then
-                strDate = Left(strDate, 4) & "/" & Microsoft.VisualBasic.Mid(strDate, 6, 2) & "/" & Microsoft.VisualBasic.Mid(strDate, 9, 2)
+                strDate = Microsoft.VisualBasic.Left(strDate, 4) & "-" & Microsoft.VisualBasic.Mid(strDate, 6, 2) & "-" & Microsoft.VisualBasic.Mid(strDate, 9, 2)
             End If
 
             Return strDate
@@ -527,15 +545,12 @@ NextLine:
         Catch ex As Exception
             WriteToLog(ex.ToString(), True)
         End Try
+
     End Function
     Private Function mimicTime(ByVal lngEpochTime As Long)
 
-        'unix = 1356998400 ' 01 01 2013 00:00:00
-        '1375531467 = 3/08/2013 12:04:27
-
         Try
-            Dim baseDate As New DateTime(1970, 1, 1, 0, 0, 0)
-            Dim datDate As Date = baseDate.ToLocalTime().AddSeconds(lngEpochTime)
+            Dim datDate As Date = DateAdd(DateInterval.Second, lngEpochTime, #1/1/1970#)
             Dim strTime As String = datDate.ToString(Format("HH:mm:ss"))
 
             Return strTime
@@ -543,6 +558,7 @@ NextLine:
         Catch ex As Exception
             WriteToLog(ex.ToString(), True)
         End Try
+
     End Function
     Private Function ByteArrayToString(ByVal ba As Byte()) As String
         Dim hex As String = BitConverter.ToString(ba)
@@ -579,4 +595,6 @@ NextLine:
         End Try
 
     End Function
+
+
 End Class
